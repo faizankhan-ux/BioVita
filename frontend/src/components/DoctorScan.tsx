@@ -13,17 +13,42 @@ const DoctorScan = () => {
   const [scanStep, setScanStep] = useState<'idle' | 'scanning' | 'matched'>('idle');
   const [result, setResult] = useState<MedicalIdentity | null>(null);
 
-  const handleStartScan = () => {
+  const handleStartScan = async () => {
     setIsScanning(true);
     setScanStep('scanning');
     
-    // Simulation: 3 seconds to "match"
-    setTimeout(() => {
-      const match = findMatch();
-      setResult(match);
-      setScanStep('matched');
+    try {
+      // For demo purposes, we send a dummy blob to trigger the backend's "Last Registered" logic
+      const dummyBlob = new Blob(['dummy image data'], { type: 'image/jpeg' });
+      const formData = new FormData();
+      formData.append('faceImage', dummyBlob, 'scan.jpg');
+
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/patient/match`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      // Artificial delay for scanning effect (3 seconds)
+      setTimeout(() => {
+        if (result.matchFound) {
+          setResult(result.patient);
+          setScanStep('matched');
+        } else {
+          alert("No patient match found in the database.");
+          setScanStep('idle');
+        }
+        setIsScanning(false);
+      }, 3000);
+
+    } catch (error) {
+      console.error("Scan Error:", error);
+      alert("Failed to connect to the biometric database.");
       setIsScanning(false);
-    }, 3000);
+      setScanStep('idle');
+    }
   };
 
   const handleViewResult = () => {

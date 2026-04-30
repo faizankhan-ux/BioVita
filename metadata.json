@@ -1,5 +1,0 @@
-{
-  "name": "Remix: BioVita - Health Management",
-  "description": "A smart health management platform with an AI Health Assistant for symptom checking, health advice, and medical record management.",
-  "requestFramePermissions": ["geolocation"]
-}

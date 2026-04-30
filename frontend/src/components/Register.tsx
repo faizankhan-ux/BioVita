@@ -25,32 +25,93 @@ const Register = () => {
     age: '',
     gender: '',
     doctorHospital: '',
-    image: '',
-    reports: [] as Array<{ name: string; type: string; content: string }>
   });
 
+  const [faceImage, setFaceImage] = useState<File | null>(null);
+  const [reportFiles, setReportFiles] = useState<File[]>([]);
+  const [faceImagePreview, setFaceImagePreview] = useState<string>('');
+  const [reportPreviews, setReportPreviews] = useState<Array<{ name: string; type: string; url: string }>>([]);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const genders = ['Male', 'Female', 'Non-binary', 'Other', 'Prefer not to say'];
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    registerIdentity(formData);
-    setIsSubmitted(true);
-    setTimeout(() => {
-      navigate('/patient');
-    }, 3000);
+
+    // Comprehensive Validation
+    const newErrors: Record<string, string> = {};
+    if (!formData.bloodGroup) newErrors.bloodGroup = "Blood group is required";
+    if (!formData.allergies) newErrors.allergies = "Allergy information is required";
+    if (!formData.emergencyContact) newErrors.emergencyContact = "Emergency contact is required";
+    if (!faceImage) newErrors.faceImage = "Face image is required for identity enrollment";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      // Scroll to first error or just alert for demo
+      const firstError = Object.values(newErrors)[0];
+      alert(`Validation Error: ${firstError}`);
+      return;
+    }
+
+    setIsReady(true);
+    
+    // Prepare for Backend
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => data.append(key, value));
+    if (faceImage) data.append('faceImage', faceImage);
+    reportFiles.forEach(file => data.append(`reports`, file));
+
+    // API Call to Backend
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    fetch(`${API_URL}/api/patient/register`, {
+      method: 'POST',
+      body: data
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        console.log("Registration Successful:", result);
+        // Update local context for immediate demo feedback
+        registerIdentity({
+          ...formData,
+          id: result.patientId, // Use ID from server
+          image: faceImagePreview,
+          reports: reportPreviews.map(r => ({ name: r.name, type: r.type, content: '' }))
+        });
+        
+        setIsSubmitted(true);
+        setTimeout(() => navigate('/patient'), 3000);
+      } else {
+        alert("Registration failed: " + result.message);
+        setIsReady(false);
+      }
+    })
+    .catch(error => {
+      console.error("API Error:", error);
+      alert("Could not connect to the backend server. Please ensure it is running on port 5000.");
+      setIsReady(false);
+    });
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+      setFaceImage(file);
+      setFaceImagePreview(URL.createObjectURL(file));
+      setErrors(prev => ({ ...prev, faceImage: '' }));
     }
   };
 
@@ -60,55 +121,36 @@ const Register = () => {
 
     setIsUploading(true);
     
-    const newReports: Array<{ name: string; type: string; content: string }> = [];
+    const newFiles: File[] = [];
+    const newPreviews: Array<{ name: string; type: string; url: string }> = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      if (file.size > 5 * 1024 * 1024) continue;
       
-      // Limit to 5MB
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`${file.name} exceeds 5MB limit.`);
-        continue;
-      }
-
-      // Check types
       const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-      if (!allowedTypes.includes(file.type)) {
-        alert(`${file.name} is not a supported file type (PDF, JPG, PNG only).`);
-        continue;
-      }
+      if (!allowedTypes.includes(file.type)) continue;
 
-      const report = await new Promise<{ name: string; type: string; content: string }>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          resolve({
-            name: file.name,
-            type: file.type,
-            content: reader.result as string
-          });
-        };
-        reader.readAsDataURL(file);
+      newFiles.push(file);
+      newPreviews.push({ 
+        name: file.name, 
+        type: file.type,
+        url: URL.createObjectURL(file)
       });
-      
-      newReports.push(report);
     }
 
-    setFormData(prev => ({
-      ...prev,
-      reports: [...prev.reports, ...newReports]
-    }));
+    setReportFiles(prev => [...prev, ...newFiles]);
+    setReportPreviews(prev => [...prev, ...newPreviews]);
     
-    // Simulate upload delay
+    // Simulate processing delay
     setTimeout(() => {
       setIsUploading(false);
     }, 800);
   };
 
   const removeReport = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      reports: prev.reports.filter((_, i) => i !== index)
-    }));
+    setReportFiles(prev => prev.filter((_, i) => i !== index));
+    setReportPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   if (isSubmitted) {
@@ -165,10 +207,12 @@ const Register = () => {
                       id="name"
                       required
                       placeholder="Enter your full name"
-                      className="pl-12 bg-white/5 border-white/10 h-12 rounded-xl focus:border-red-500/50"
+                      name="name"
+                      className={`pl-12 bg-white/5 border-white/10 h-12 rounded-xl focus:border-red-500/50 ${errors.name ? 'border-red-500/50' : ''}`}
                       value={formData.name}
-                      onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={handleChange}
                     />
+                    {errors.name && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.name}</p>}
                   </div>
                 </div>
 
@@ -179,9 +223,10 @@ const Register = () => {
                     <select 
                       id="blood"
                       required
-                      className="w-full pl-12 bg-white/5 border border-white/10 h-12 rounded-xl focus:border-red-500/50 appearance-none text-sm text-white"
+                      name="bloodGroup"
+                      className={`w-full pl-12 bg-white/5 border h-12 rounded-xl focus:border-red-500/50 appearance-none text-sm text-white ${errors.bloodGroup ? 'border-red-500/50' : 'border-white/10'}`}
                       value={formData.bloodGroup}
-                      onChange={e => setFormData(prev => ({ ...prev, bloodGroup: e.target.value }))}
+                      onChange={handleChange}
                     >
                       <option value="" disabled className="bg-black text-white/40">Select Group</option>
                       {bloodGroups.map(bg => (
@@ -198,10 +243,12 @@ const Register = () => {
                     <Input 
                       id="allergies"
                       placeholder="e.g. Penicillin, Peanuts"
-                      className="pl-12 bg-white/5 border-white/10 h-12 rounded-xl focus:border-red-500/50"
+                      name="allergies"
+                      className={`pl-12 bg-white/5 border h-12 rounded-xl focus:border-red-500/50 ${errors.allergies ? 'border-red-500/50' : 'border-white/10'}`}
                       value={formData.allergies}
-                      onChange={e => setFormData(prev => ({ ...prev, allergies: e.target.value }))}
+                      onChange={handleChange}
                     />
+                    {errors.allergies && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.allergies}</p>}
                   </div>
                 </div>
               </div>
@@ -213,9 +260,10 @@ const Register = () => {
                   <textarea 
                     id="chronic"
                     placeholder="e.g. Diabetes, Asthma, Epilepsy"
+                    name="chronicConditions"
                     className="w-full pl-12 p-3.5 bg-white/5 border border-white/10 rounded-xl focus:border-red-500/50 min-h-[80px] text-sm resize-none"
                     value={formData.chronicConditions}
-                    onChange={e => setFormData(prev => ({ ...prev, chronicConditions: e.target.value }))}
+                    onChange={handleChange}
                   />
                 </div>
               </div>
@@ -236,9 +284,10 @@ const Register = () => {
                     <Input 
                       id="meds"
                       placeholder="e.g. Metformin 500mg (Daily)"
+                      name="medications"
                       className="pl-12 bg-white/5 border-white/10 h-12 rounded-xl focus:border-orange-500/50"
                       value={formData.medications}
-                      onChange={e => setFormData(prev => ({ ...prev, medications: e.target.value }))}
+                      onChange={handleChange}
                     />
                   </div>
                 </div>
@@ -249,9 +298,10 @@ const Register = () => {
                     <Input 
                       id="surgeries"
                       placeholder="e.g. Heart Valve, Knee Replacement"
+                      name="pastSurgeries"
                       className="bg-white/5 border-white/10 h-12 rounded-xl focus:border-orange-500/50"
                       value={formData.pastSurgeries}
-                      onChange={e => setFormData(prev => ({ ...prev, pastSurgeries: e.target.value }))}
+                      onChange={handleChange}
                     />
                   </div>
                   <div className="space-y-2">
@@ -259,9 +309,10 @@ const Register = () => {
                     <Input 
                       id="recent"
                       placeholder="Within last 12 months"
+                      name="recentIssues"
                       className="bg-white/5 border-white/10 h-12 rounded-xl focus:border-orange-500/50"
                       value={formData.recentIssues}
-                      onChange={e => setFormData(prev => ({ ...prev, recentIssues: e.target.value }))}
+                      onChange={handleChange}
                     />
                   </div>
                 </div>
@@ -284,10 +335,12 @@ const Register = () => {
                       id="contact"
                       required
                       placeholder="+1 555-0199"
-                      className="pl-12 bg-white/5 border-white/10 h-12 rounded-xl focus:border-yellow-500/50"
+                      name="emergencyContact"
+                      className={`pl-12 bg-white/5 border h-12 rounded-xl focus:border-yellow-500/50 ${errors.emergencyContact ? 'border-red-500/50' : 'border-white/10'}`}
                       value={formData.emergencyContact}
-                      onChange={e => setFormData(prev => ({ ...prev, emergencyContact: e.target.value }))}
+                      onChange={handleChange}
                     />
+                    {errors.emergencyContact && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.emergencyContact}</p>}
                   </div>
                 </div>
 
@@ -298,18 +351,20 @@ const Register = () => {
                       id="age"
                       type="number"
                       placeholder="25"
+                      name="age"
                       className="bg-white/5 border-white/10 h-12 rounded-xl focus:border-yellow-500/50"
                       value={formData.age}
-                      onChange={e => setFormData(prev => ({ ...prev, age: e.target.value }))}
+                      onChange={handleChange}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender" className="text-xs uppercase font-bold tracking-widest text-white/40">Gender</Label>
                     <select 
                       id="gender"
+                      name="gender"
                       className="w-full px-4 bg-white/5 border border-white/10 h-12 rounded-xl focus:border-yellow-500/50 appearance-none text-sm text-white"
                       value={formData.gender}
-                      onChange={e => setFormData(prev => ({ ...prev, gender: e.target.value }))}
+                      onChange={handleChange}
                     >
                       <option value="" disabled className="bg-black text-white/40">Select</option>
                       {genders.map(g => (
@@ -324,9 +379,10 @@ const Register = () => {
                   <Input 
                     id="hosp"
                     placeholder="e.g. Dr. Smith, Saint Jude Hospital"
+                    name="doctorHospital"
                     className="bg-white/5 border-white/10 h-12 rounded-xl focus:border-yellow-500/50"
                     value={formData.doctorHospital}
-                    onChange={e => setFormData(prev => ({ ...prev, doctorHospital: e.target.value }))}
+                    onChange={handleChange}
                   />
                 </div>
               </div>
@@ -367,9 +423,9 @@ const Register = () => {
                   />
                 </label>
 
-                {formData.reports.length > 0 && (
+                {reportPreviews.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                    {formData.reports.map((report, idx) => (
+                    {reportPreviews.map((report, idx) => (
                       <motion.div 
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -409,9 +465,9 @@ const Register = () => {
             <div className="glass p-8 rounded-[2.5rem] border-white/5">
               <Label className="text-xs uppercase font-bold tracking-widest text-white/40 mb-6 block text-center">Identity Enrollment</Label>
               <div className="flex flex-col items-center">
-                <label className="group relative w-32 h-32 rounded-full glass border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer hover:border-red-500/50 transition-all overflow-hidden">
-                  {formData.image ? (
-                    <img src={formData.image} alt="Biometric" className="w-full h-full object-cover" />
+                <label className={`group relative w-32 h-32 rounded-full glass border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${errors.faceImage ? 'border-red-500/50' : 'border-white/10 hover:border-red-500/50'}`}>
+                  {faceImagePreview ? (
+                    <img src={faceImagePreview} alt="Biometric" className="w-full h-full object-cover" />
                   ) : (
                     <>
                       <Camera className="w-8 h-8 text-white/20 group-hover:text-red-500/50 mb-1" />
@@ -425,15 +481,24 @@ const Register = () => {
                     className="hidden" 
                   />
                 </label>
+                {errors.faceImage && <p className="text-red-500 text-[10px] mt-2 font-bold uppercase tracking-widest">{errors.faceImage}</p>}
                 <p className="mt-4 text-center text-[10px] text-white/20 max-w-[280px]">Secure biometric identification is used to retrieve your medical profile during emergencies.</p>
               </div>
             </div>
 
             <Button 
               type="submit"
-              className="w-full h-16 rounded-3xl bg-gradient-to-r from-red-600 to-red-500 text-white font-bold text-lg shadow-[0_0_30px_rgba(220,38,38,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+              disabled={isReady}
+              className={`w-full h-16 rounded-3xl font-bold text-lg shadow-[0_0_30px_rgba(220,38,38,0.3)] transition-all active:scale-[0.98] ${isReady ? 'bg-green-500 hover:bg-green-600' : 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:scale-[1.02]'}`}
             >
-              Verify & Complete Setup
+              {isReady ? (
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Registration Ready
+                </div>
+              ) : (
+                "Verify & Complete Setup"
+              )}
             </Button>
           </form>
         </div>

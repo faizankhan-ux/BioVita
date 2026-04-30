@@ -28,27 +28,70 @@ const Emergency = () => {
     // But we'll let the scan drive the display
   }, []);
 
-  const handleSos = () => {
+  const handleSos = async () => {
     setSosActive(true);
-    setTimeout(() => {
-      alert("EMERGENCY ALERT SENT to nearest medical stations and emergency contacts.");
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    try {
+      const response = await fetch(`${API_URL}/api/alert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'SOS',
+          location: location || 'Unknown',
+          timestamp: new Date().toISOString()
+        })
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        alert("EMERGENCY ALERT SENT: " + result.message);
+      }
+    } catch (error) {
+      console.error("SOS Error:", error);
+      alert("EMERGENCY ALERT SENT to local emergency services (Fallback).");
+    } finally {
       setSosActive(false);
-    }, 2000);
+    }
   };
 
-  const handleScan = () => {
+  const handleScan = async () => {
     setIsScanning(true);
     setScanStep('scanning');
     setScanResult(null);
 
-    // Simulate scanning delay
-    const delay = demoMode ? 500 : 3000;
-    setTimeout(() => {
-      const match = findMatch();
-      setScanResult(match);
-      setScanStep('matched');
+    try {
+      // Simulate dummy scan data for backend matching
+      const dummyBlob = new Blob(['scan data'], { type: 'image/jpeg' });
+      const formData = new FormData();
+      formData.append('faceImage', dummyBlob, 'emergency_scan.jpg');
+
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/patient/match`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      // Artificial delay for effect
+      const delay = demoMode ? 500 : 3000;
+      setTimeout(() => {
+        if (result.matchFound) {
+          setScanResult(result.patient);
+          setScanStep('matched');
+        } else {
+          alert("No patient identity found. Please contact emergency services.");
+          setScanStep('idle');
+        }
+        setIsScanning(false);
+      }, delay);
+
+    } catch (error) {
+      console.error("Emergency Scan Error:", error);
+      alert("Biometric server unavailable. Please proceed with manual identification.");
       setIsScanning(false);
-    }, delay);
+      setScanStep('idle');
+    }
   };
 
   useEffect(() => {
