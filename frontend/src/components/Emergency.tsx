@@ -6,9 +6,11 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import NearbyHospitals from './NearbyHospitals';
 import { useMedicalIdentity, MedicalIdentity } from '../contexts/MedicalIdentityContext';
+import { FaceApiService } from '../services/faceApiService';
 
 const Emergency = () => {
   const navigate = useNavigate();
+  const videoRef = React.useRef<HTMLVideoElement>(null);
   const { findMatch } = useMedicalIdentity();
   const [sosActive, setSosActive] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -17,6 +19,19 @@ const Emergency = () => {
   const [scanStep, setScanStep] = useState<'idle' | 'scanning' | 'matched'>('idle');
   const [demoMode, setDemoMode] = useState(false);
 
+  useEffect(() => {
+    startCamera();
+    FaceApiService.loadModels();
+  }, []);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch (err) {
+      console.error("Camera Error:", err);
+    }
+  };
   const emergencyContacts = [
     { name: 'National Emergency', number: '112', icon: <ShieldAlert className="text-red-500" /> },
     { name: 'Ambulance', number: '102', icon: <Activity className="text-red-500" /> },
@@ -57,40 +72,54 @@ const Emergency = () => {
   const handleScan = async () => {
     setIsScanning(true);
     setScanStep('scanning');
-    setScanResult(null);
+    setScanResult(null); // Reset previous result
 
     try {
-      // Simulate dummy scan data for backend matching
-      const dummyBlob = new Blob(['scan data'], { type: 'image/jpeg' });
-      const formData = new FormData();
-      formData.append('faceImage', dummyBlob, 'emergency_scan.jpg');
+      await FaceApiService.loadModels();
 
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${API_URL}/api/patient/match`, {
-        method: 'POST',
-        body: formData
-      });
+      if (videoRef.current) {
+        const descriptor = await FaceApiService.getFaceDescriptor(videoRef.current);
+        
+        if (!descriptor) {
+          alert("No face detected. Please try again.");
+          setScanStep('idle');
+          setIsScanning(false);
+          return;
+        }
 
-      const result = await response.json();
-      
-      // Artificial delay for effect
-      const delay = demoMode ? 500 : 3000;
-      setTimeout(() => {
+        console.log("🧬 [Scanning] Captured Descriptor (first 5 values):", Array.from(descriptor).slice(0, 5));
+
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/patient/match`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+          body: JSON.stringify({ descriptor })
+        });
+
+        const result = await response.json();
+        
         if (result.matchFound) {
+          console.log("✅ [Matching] Best Match Found:", result.patient.name);
           setScanResult(result.patient);
           setScanStep('matched');
         } else {
-          alert("No patient identity found. Please contact emergency services.");
+          console.warn("🔍 [Matching] No identity match found within threshold.");
+          alert("No patient identity found.");
           setScanStep('idle');
         }
-        setIsScanning(false);
-      }, delay);
-
+      } else {
+        alert("Camera feed not ready.");
+        setScanStep('idle');
+      }
     } catch (error) {
-      console.error("Emergency Scan Error:", error);
-      alert("Biometric server unavailable. Please proceed with manual identification.");
-      setIsScanning(false);
+      console.error("❌ [Scanning] Emergency Scan Error:", error);
+      alert("Biometric matching failed.");
       setScanStep('idle');
+    } finally {
+      setIsScanning(false);
     }
   };
 
@@ -115,6 +144,9 @@ const Emergency = () => {
           {/* Left Column: SOS & Stats */}
           <div className="lg:col-span-2 space-y-8">
             <div className="glass p-8 md:p-12 rounded-[2.5rem] border-red-500/20 relative overflow-hidden">
+               {/* Hidden Video for Biometric Capture */}
+               <video ref={videoRef} autoPlay playsInline className="absolute opacity-0 pointer-events-none w-px h-px" />
+               
                {/* Background Glow */}
                <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 blur-[100px] rounded-full" />
                
@@ -251,7 +283,7 @@ const Emergency = () => {
                 >
                   <div className="flex items-center gap-4 mb-6">
                     <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/10">
-                      <img src={scanResult.image || "https://i.pravatar.cc/150"} alt={scanResult.name} className="w-full h-full object-cover" />
+                      <img src={scanResult.faceImageUrl || scanResult.image || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=150&h=150&fit=crop"} alt={scanResult.name} className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <div className="text-xl font-bold">{scanResult.name}</div>
@@ -282,12 +314,21 @@ const Emergency = () => {
                           <ShieldAlert className="w-4 h-4 text-green-500" />
                           <span className="text-[10px] font-bold text-green-500 uppercase">Emergency Contact Notified</span>
                        </div>
-                       <button 
-                         onClick={() => navigate('/doctor/result', { state: { patient: scanResult } })}
-                         className="w-full py-3 rounded-xl bg-green-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-green-600 transition-colors"
-                       >
-                         View Full Medical Dossier
-                       </button>
+                        <button 
+                          onClick={() => navigate('/doctor/result', { state: { patient: scanResult } })}
+                          className="w-full py-3 rounded-xl bg-green-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-green-600 transition-colors"
+                        >
+                          View Full Medical Dossier
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setScanResult(null);
+                            setScanStep('idle');
+                          }}
+                          className="w-full py-3 rounded-xl bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
+                        >
+                          New Scan
+                        </button>
                     </div>
                   </div>
                 </motion.div>
@@ -313,7 +354,7 @@ const Emergency = () => {
               <div className="space-y-3">
                 {scanStep === 'matched' && scanResult ? (
                    <a 
-                    href={`tel:${scanResult.emergencyContact.split('(')[1]?.replace(')', '') || ''}`}
+                    href={`tel:${scanResult.emergencyContact?.includes('(') ? (scanResult.emergencyContact.split('(')[1]?.replace(')', '') || '') : scanResult.emergencyContact}`}
                     className="flex items-center justify-between p-4 rounded-2xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-all group"
                   >
                     <div className="flex items-center gap-3">
@@ -321,8 +362,8 @@ const Emergency = () => {
                         <User className="w-5 h-5" />
                       </div>
                       <div>
-                        <div className="font-bold text-sm text-red-500">{scanResult.emergencyContact.split('(')[0]}</div>
-                        <div className="text-xs text-red-500/60">{scanResult.emergencyContact.split('(')[1]?.replace(')', '')}</div>
+                        <div className="font-bold text-sm text-red-500">{scanResult.emergencyContact?.includes('(') ? scanResult.emergencyContact.split('(')[0] : 'Primary Contact'}</div>
+                        <div className="text-xs text-red-500/60">{scanResult.emergencyContact?.includes('(') ? scanResult.emergencyContact.split('(')[1]?.replace(')', '') : scanResult.emergencyContact}</div>
                       </div>
                     </div>
                     <Phone className="w-4 h-4 text-red-500" />

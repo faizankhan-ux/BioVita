@@ -30,6 +30,7 @@ import {
   LogOut,
   ArrowLeft
 } from "lucide-react";
+import { QRCodeCanvas } from 'qrcode.react';
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -53,8 +54,8 @@ import { SearchBar } from "@/components/ui/search-bar";
 import { useToast } from "@/lib/toast-context";
 import { StackedList } from "@/components/ui/stacked-list";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "@/lib/firebase";
+import { auth, db } from "../lib/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { recordService, HealthRecord } from "@/services/recordService";
 import { GoogleGenAI } from "@google/genai";
 import { TextRoll } from "@/components/ui/animated-menu";
@@ -563,11 +564,21 @@ const QRShareView = ({ profile }: { profile: any }) => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
       <div className="flex flex-col items-center justify-center p-8 glass rounded-[3rem] border border-white/10">
         <div className="p-4 bg-white rounded-3xl mb-6">
-          <QrCode className="size-64 text-black" />
+          {profile?.patientId ? (
+            <QRCodeCanvas value={`${window.location.origin}/emergency/${profile.patientId}`} size={256} level="H" />
+          ) : (
+            <div className="size-64 flex flex-col items-center justify-center text-black text-center p-6 bg-gray-100 rounded-2xl">
+              <QrCode className="size-16 mb-4 opacity-20" />
+              <p className="text-sm font-bold">Medical Identity Not Registered</p>
+              <p className="text-[10px] opacity-60 mt-1">Please complete your onboarding to generate a QR code.</p>
+            </div>
+          )}
         </div>
         <p className="text-white font-bold text-xl mb-2">Scan to access profile</p>
-        <p className="text-secondary text-sm font-medium">Valid for: {profile?.displayName || "User"}</p>
-        <p className="text-[10px] text-white/20 mt-2 font-mono">UID: {profile?.uid || "..."}</p>
+        <p className="text-secondary text-sm font-medium">Valid for: {profile?.displayName || profile?.name || "User"}</p>
+        <p className="text-[10px] text-white/20 mt-2 font-mono">
+          {profile?.patientId ? `Patient ID: ${profile.patientId}` : `UID: ${profile?.uid || "..."}`}
+        </p>
       </div>
 
       <div className="space-y-6">
@@ -604,6 +615,21 @@ const QRShareView = ({ profile }: { profile: any }) => (
             </div>
           </div>
         </Card>
+
+        {!profile?.patientId && (
+          <Card className="border-red-500/20 bg-red-500/[0.02]">
+             <div className="flex gap-4">
+                <div className="size-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 shrink-0">
+                   <AlertCircle className="size-5" />
+                </div>
+                <div>
+                   <h4 className="font-bold text-white mb-1 text-sm">Registration Required</h4>
+                   <p className="text-[10px] text-secondary leading-relaxed mb-4">You need to register your medical identity to use emergency QR sharing features.</p>
+                   <Link to="/patient/register" className="text-red-500 font-bold text-[10px] uppercase tracking-widest hover:underline">Complete Onboarding Now</Link>
+                </div>
+             </div>
+          </Card>
+        )}
         
         <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5">
           <Shield className="size-5 text-emerald-400" />
@@ -1209,10 +1235,16 @@ export default function Dashboard() {
     if (!user) return;
 
     const fetchProfile = async () => {
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setUserProfile(docSnap.data());
+      try {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setUserProfile(docSnap.data());
+        }
+      } catch (err: any) {
+        console.warn("⚠️ [Dashboard] Failed to fetch user profile (likely permissions):", err.message);
+        // Set a basic profile to avoid undefined errors
+        setUserProfile({ uid: user.uid, displayName: user.displayName });
       }
     };
     fetchProfile();

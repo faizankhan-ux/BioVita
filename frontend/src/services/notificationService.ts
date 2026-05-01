@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebase";
+import { db } from "../lib/firebase";
 import { 
   collection, 
   addDoc, 
@@ -10,7 +10,7 @@ import {
   doc, 
   serverTimestamp,
   Timestamp
-} from "@/lib/firebase";
+} from "firebase/firestore";
 
 export interface Notification {
   id: string;

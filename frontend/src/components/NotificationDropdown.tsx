@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Bell, Check, Info, AlertTriangle, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { notificationService, Notification } from "@/services/notificationService";
-import { auth } from "@/lib/firebase";
+import { notificationService, Notification } from "../services/notificationService";
+import { auth } from "../lib/firebase";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 

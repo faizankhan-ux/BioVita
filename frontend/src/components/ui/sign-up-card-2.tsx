@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import { createUserWithEmailAndPassword, auth, updateProfile } from "@/lib/firebase";
+import { auth, db } from "../../lib/firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { useToast } from "@/lib/toast-context";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Logo } from "@/components/ui/Logo";
@@ -68,9 +70,22 @@ export function SignUpCardV2() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Update profile with full name
       if (auth.currentUser) {
         await updateProfile(auth.currentUser, { displayName: fullName });
+        
+        // Create user document in Firestore
+        try {
+          await setDoc(doc(db, "users", auth.currentUser.uid), {
+            fullName,
+            email,
+            role: "user",
+            createdAt: new Date().toISOString()
+          });
+          console.log("✅ [Signup] User profile created in Firestore");
+        } catch (fsError) {
+          console.error("❌ [Signup] Error creating Firestore profile:", fsError);
+          // Don't fail the whole signup if just Firestore profile creation fails
+        }
       }
 
       toast({

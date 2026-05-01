@@ -7,9 +7,9 @@ import {
   Timestamp,
   addDoc,
   serverTimestamp
-} from "@/lib/firebase";
-import { db } from "@/lib/firebase";
-import { notificationService } from "@/services/notificationService";
+} from "firebase/firestore";
+import { db } from "../lib/firebase";
+import { notificationService } from "./notificationService";
 
 export interface HealthRecord {
   id: string;

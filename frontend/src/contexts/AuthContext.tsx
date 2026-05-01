@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, signOut as firebaseSignOut } from '@/lib/firebase';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from '@/lib/firebase';
+import { onAuthStateChanged, User, signOut as firebaseSignOut } from "firebase/auth";
+import { auth, db } from "../lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 interface AuthContextType {
   user: User | null;
@@ -26,8 +26,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUserData(null);
       }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
+    } catch (error: any) {
+      // If it's a permission error, it's likely because the document doesn't exist 
+      // and the rules are strict, or the collection name is incorrect.
+      if (error.code === 'permission-denied') {
+        console.warn('ℹ️ [AuthContext] User document not found or access denied. This is normal if the user profile hasn\'t been created in Firestore yet.');
+      } else {
+        console.error('❌ [AuthContext] Error fetching user data:', error);
+      }
       setUserData(null);
     }
   };

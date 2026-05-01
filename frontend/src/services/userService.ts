@@ -1,5 +1,5 @@
-import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "@/lib/firebase";
+import { db } from "../lib/firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 export interface UserProfile {
   uid: string;

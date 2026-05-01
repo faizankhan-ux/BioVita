@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Send, Bot, User, Loader2, Info, RefreshCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { GoogleGenAI } from "@google/genai";
+import { startHealthChat } from "../services/geminiService";
 
 interface Message {
   id: string;
@@ -47,23 +47,19 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-      const chat = ai.chats.create({
-        model: "gemini-3-flash-preview",
-        config: {
-          systemInstruction: "You are BioVita AI, a professional and empathetic health assistant. Provide accurate health information, explain symptoms, and offer wellness advice. ALWAYS include a medical disclaimer in your responses. Use Markdown for formatting. Keep responses concise but informative.",
-        },
-        history: messages.map((m) => ({
-          role: m.role,
-          parts: [{ text: m.text }],
-        })),
-      });
+      const chat = startHealthChat(messages.map(m => ({
+        role: m.role,
+        content: m.text
+      })));
 
-      const result = await chat.sendMessage({ message: input });
+      const result = await chat.sendMessage(input);
+      const response = await result.response;
+      const text = response.text();
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: "model",
-        text: result.text || "I'm sorry, I couldn't generate a response. Please try again.",
+        text: text || "I'm sorry, I couldn't generate a response. Please try again.",
         timestamp: new Date(),
       };
 

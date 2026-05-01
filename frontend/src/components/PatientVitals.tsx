@@ -56,8 +56,8 @@ const PatientVitals = () => {
                    </h3>
                    <span className="text-[10px] uppercase font-black tracking-widest text-red-500 animate-pulse">● Live Stream</span>
                 </div>
-                <div className="w-full h-64">
-                   <ResponsiveContainer width="100%" height="100%">
+                <div className="w-full h-64 min-h-[250px]">
+                   <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                       <LineChart data={data}>
                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                          <XAxis dataKey="time" hide />

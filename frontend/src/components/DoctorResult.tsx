@@ -73,13 +73,15 @@ const DoctorResult = () => {
                     className="glass p-8 rounded-[2.5rem] border-orange-500/30 bg-orange-500/[0.03] space-y-4"
                   >
                      <span className="text-[10px] uppercase font-black tracking-[0.2em] text-orange-500 mb-2 block">Allergy Warnings</span>
-                     <div className="flex flex-wrap gap-2">
-                        {patient.allergies.split(',').map((allergy, i) => (
+                      <div className="flex flex-wrap gap-2">
+                        {patient.allergies ? patient.allergies.split(',').map((allergy, i) => (
                            <div key={i} className="px-4 py-2 rounded-xl bg-orange-500/20 text-orange-500 text-xs font-black uppercase border border-orange-500/20">
                               {allergy.trim()}
                            </div>
-                        ))}
-                     </div>
+                        )) : (
+                          <div className="text-white/20 text-xs font-bold italic">No Known Allergies Reported</div>
+                        )}
+                      </div>
                      <p className="text-xs text-white/40 pt-2 leading-relaxed">System-verified allergy report. Avoid listed substances immediately.</p>
                   </motion.div>
                </div>
@@ -171,7 +173,7 @@ const DoctorResult = () => {
             <div className="space-y-8">
                <div className="glass p-8 rounded-[2.5rem] border-white/5 flex flex-col items-center">
                   <div className="w-full aspect-square rounded-[2rem] overflow-hidden mb-8 border-4 border-white/5 shadow-2xl">
-                     <img src={patient.image || "https://i.pravatar.cc/400"} alt={patient.name} className="w-full h-full object-cover" />
+                     <img src={patient.faceImageUrl || patient.image || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop"} alt={patient.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="w-full space-y-6">
                      <div>
@@ -184,8 +186,8 @@ const DoctorResult = () => {
                            <Phone className="w-3 h-3" />
                            Emergency Alert Status
                         </label>
-                        <div className="text-sm font-bold mb-1">{patient.emergencyContact.split('(')[0]}</div>
-                        <div className="text-xl font-black text-red-500">{patient.emergencyContact.split('(')[1]?.replace(')', '')}</div>
+                        <div className="text-sm font-bold mb-1">{patient.emergencyContact?.includes('(') ? patient.emergencyContact.split('(')[0] : 'Primary Contact'}</div>
+                        <div className="text-xl font-black text-red-500">{patient.emergencyContact?.includes('(') ? patient.emergencyContact.split('(')[1]?.replace(')', '') : patient.emergencyContact}</div>
                         <div className="mt-4 flex items-center gap-2 text-green-500 text-[10px] font-bold uppercase tracking-widest bg-green-500/10 p-2 rounded-lg">
                            <Shield className="w-3 h-3" />
                            Notification Sent Successfully

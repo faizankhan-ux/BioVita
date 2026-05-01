@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import { signInWithGoogle, signInWithEmailAndPassword, auth } from "@/lib/firebase";
+import { auth } from "../../lib/firebase";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useToast } from "@/lib/toast-context";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Logo } from "@/components/ui/Logo";
@@ -87,19 +88,29 @@ export function SignInCardV2() {
   };
 
   const handleGoogleSignIn = async () => {
-    setError("");
-    setIsGoogleLoading(true);
+    const provider = new GoogleAuthProvider();
     try {
-      const user = await signInWithGoogle();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
       
       toast({
         title: t('login_success_title'),
-        message: `${t('login_success_msg')}, ${user.user.displayName}!`,
+        message: `${t('login_success_msg')}, ${user.displayName}!`,
         variant: "success",
       });
       navigate("/dashboard");
     } catch (err: any) {
-      setError(err.message || "An error occurred during Google Sign-In.");
+      console.error("❌ [Google Sign-In] Error Code:", err.code);
+      console.error("❌ [Google Sign-In] Error Message:", err.message);
+      
+      let errorMessage = err.message || "An error occurred during Google Sign-In.";
+      if (err.code === 'auth/operation-not-allowed') {
+        errorMessage = "Google Sign-In is not enabled for this project. Please contact support.";
+      } else if (err.code === 'auth/popup-blocked') {
+        errorMessage = "Sign-in popup was blocked. Please allow popups for this site.";
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsGoogleLoading(false);
     }

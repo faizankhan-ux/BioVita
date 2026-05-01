@@ -11,10 +11,18 @@ const PatientRecords = () => {
 
   if (!activeUser) return null;
 
+  const userReports = (activeUser.reports || []).map((r, i) => ({
+    id: `UP-${100 + i}`,
+    type: r.name,
+    date: new Date(activeUser.createdAt).toISOString().split('T')[0],
+    provider: activeUser.doctorHospital || 'User Upload',
+    status: 'Final',
+    url: r.content
+  }));
+
   const records = [
-    { id: 'REC-001', type: 'Initial Registration', date: '2024-03-15', provider: 'BioVita System', status: 'Verified' },
-    { id: 'REC-002', type: 'Biometric Enrollment', date: '2024-03-15', provider: 'BioVita System', status: 'Completed' },
-    { id: 'REC-003', type: 'Blood Analysis', date: '2024-04-10', provider: 'Central Lab', status: 'Final' },
+    { id: 'REC-001', type: 'Initial Registration', date: new Date(activeUser.createdAt).toISOString().split('T')[0], provider: 'BioVita System', status: 'Verified' },
+    ...userReports
   ];
 
   return (
@@ -79,9 +87,15 @@ const PatientRecords = () => {
                       </span>
                     </td>
                     <td className="p-6">
-                      <button className="p-2 rounded-xl bg-white/5 group-hover:bg-red-500/20 group-hover:text-red-500 transition-all">
-                        <ExternalLink className="w-4 h-4" />
-                      </button>
+                      {(record as any).url ? (
+                        <a href={(record as any).url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-xl bg-white/5 group-hover:bg-red-500/20 group-hover:text-red-500 transition-all inline-block">
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      ) : (
+                        <button className="p-2 rounded-xl bg-white/5 group-hover:bg-red-500/20 group-hover:text-red-500 transition-all">
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </motion.tr>
                 ))}

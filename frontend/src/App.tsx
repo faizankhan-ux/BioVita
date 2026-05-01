@@ -12,6 +12,7 @@ import ContactPage from "./components/ContactPage";
 import AIAssistant from "./components/AIAssistant";
 import NearbyHospitals from "./components/NearbyHospitals";
 import Emergency from "./components/Emergency";
+import EmergencyView from "./components/EmergencyView";
 import Register from "./components/Register";
 import PatientDashboard from "./components/PatientDashboard";
 import PatientRecords from "./components/PatientRecords";
@@ -22,6 +23,7 @@ import DoctorResult from "./components/DoctorResult";
 import PortalSelection from "./components/PortalSelection";
 import PatientAuth from "./components/PatientAuth";
 import DoctorAuth from "./components/DoctorAuth";
+import GlobalAIAssistant from "./components/GlobalAIAssistant";
 import { MedicalIdentityProvider } from "./contexts/MedicalIdentityContext";
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import React, { useEffect } from "react";
@@ -35,7 +37,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (user) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/patient" />;
   }
 
   return <>{children}</>;
@@ -85,12 +87,13 @@ export default function App() {
         <Route path="/toast-demo" element={<ToasterDemo />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
-            <Dashboard />
+            <PatientDashboard />
           </ProtectedRoute>
         } />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/ai-assistant" element={<AIAssistant />} />
         <Route path="/emergency" element={<Emergency />} />
+        <Route path="/emergency/:id" element={<EmergencyView />} />
         <Route path="/portal" element={<PortalSelection />} />
         <Route path="/register" element={<PortalSelection />} />
         
@@ -132,6 +135,7 @@ export default function App() {
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <GlobalAIAssistant />
       </div>
     </MedicalIdentityProvider>
   );

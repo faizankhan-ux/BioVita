@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { User, Droplets, AlertCircle, Shield, Activity, FileText, Heart, Thermometer, Wind } from 'lucide-react';
+import { User, Droplets, AlertCircle, Shield, Activity, FileText, Heart, Thermometer, Wind, QrCode } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { useNavigate, Link } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -50,15 +51,33 @@ const PatientDashboard = () => {
               <h1 className="text-4xl font-bold">Welcome, {activeUser.name}</h1>
               <p className="text-white/40 mt-1">Medical ID: {activeUser.id}</p>
             </div>
-            <div className="flex gap-4">
-              <Link to="/patient/records" className="glass px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-white/5 transition-all text-sm font-bold">
-                <FileText className="w-4 h-4 text-red-500" />
-                Detailed Records
-              </Link>
-              <Link to="/emergency" className="bg-red-600 px-6 py-3 rounded-2xl flex items-center gap-2 hover:scale-105 transition-all text-sm font-bold shadow-lg shadow-red-500/20">
-                <Shield className="w-4 h-4" />
-                Emergency View
-              </Link>
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="glass p-4 rounded-3xl border-white/5 flex items-center gap-6">
+                <div className="p-2 bg-white rounded-xl">
+                  <QRCodeCanvas 
+                    value={`${window.location.origin}/emergency/${activeUser.id}`} 
+                    size={100} 
+                    level="L" 
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 text-green-500 mb-1">
+                    <QrCode className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Digital Emergency Card</span>
+                  </div>
+                  <div className="text-white/40 text-[10px] font-medium uppercase tracking-tighter">Verified Identity</div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Link to="/patient/records" className="glass px-6 py-4 rounded-2xl flex items-center gap-2 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest">
+                  <FileText className="w-4 h-4 text-red-500" />
+                  Records
+                </Link>
+                <Link to="/emergency" className="bg-red-600 px-6 py-4 rounded-2xl flex items-center gap-2 hover:scale-105 transition-all text-xs font-bold uppercase tracking-widest shadow-lg shadow-red-500/20">
+                  <Shield className="w-4 h-4" />
+                  SOS
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -147,7 +166,7 @@ const PatientDashboard = () => {
             <div className="space-y-8">
               <div className="glass p-8 rounded-[2.5rem] border-white/5 flex flex-col items-center">
                  <div className="w-32 h-32 rounded-3xl overflow-hidden mb-6 border-4 border-red-500/20">
-                   <img src={activeUser.image || "https://i.pravatar.cc/300"} alt="Profile" className="w-full h-full object-cover" />
+                   <img src={activeUser.faceImageUrl || activeUser.image || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&h=300&fit=crop"} alt="Profile" className="w-full h-full object-cover" />
                  </div>
                  <h4 className="text-lg font-bold mb-1">{activeUser.name}</h4>
                  <p className="text-xs text-white/40 mb-6">Verified Patient since {new Date(activeUser.createdAt).getFullYear()}</p>

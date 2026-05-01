@@ -35,7 +35,7 @@ export default function Navbar() {
     navigate("/");
   };
 
-  const dashboardPath = userData?.role === 'doctor' ? '/doctor-dashboard' : '/dashboard';
+  const dashboardPath = userData?.role === 'doctor' ? '/doctor' : '/patient';
 
   const navLinks = [
     { label: 'Home', to: "/" },
