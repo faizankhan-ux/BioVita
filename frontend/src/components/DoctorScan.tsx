@@ -8,32 +8,21 @@ import Footer from './Footer';
 import { useMedicalIdentity, MedicalIdentity } from '../contexts/MedicalIdentityContext';
 import { FaceApiService } from '../services/faceApiService';
 
+const ChevronRight = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+);
+
 const DoctorScan = () => {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
-<<<<<<< HEAD
-=======
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
   const [scanMode, setScanMode] = useState<'biometric' | 'qr'>('biometric');
->>>>>>> e733d0c (AI chatbot , QR scanner added)
   const [isScanning, setIsScanning] = useState(false);
   const [scanStep, setScanStep] = useState<'idle' | 'scanning' | 'matched'>('idle');
   const { setActiveUser } = useMedicalIdentity();
   const [matchedPatient, setMatchedPatient] = useState<MedicalIdentity | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [registeredId, setRegisteredId] = useState<string | null>(null);
-
-  useEffect(() => {
-    FaceApiService.loadModels();
-    if (scanStep === 'scanning' || scanStep === 'idle') {
-      startCamera();
-    }
-
-    return () => {
-      stopCamera();
-    };
-  }, [scanStep]);
-
   const [cameraError, setCameraError] = useState<string | null>(null);
   const isStartingRef = useRef(false);
 
@@ -98,18 +87,11 @@ const DoctorScan = () => {
     if (scanStep === 'scanning' || scanStep === 'idle') {
       startCamera();
     }
-  }, [scanStep]);
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.error("Error accessing webcam:", err);
-    }
-  };
+    return () => {
+      stopCamera();
+    };
+  }, [scanStep]);
 
   const handleStartScan = async () => {
     if (scanMode === 'qr') {
@@ -118,7 +100,6 @@ const DoctorScan = () => {
     }
     
     setIsScanning(true);
-    setScanStep('scanning');
     setScanStep('scanning');
     setMatchedPatient(null); // Clear previous result
     
@@ -193,41 +174,6 @@ const DoctorScan = () => {
     setScanStep('scanning');
     
     try {
-<<<<<<< HEAD
-      await FaceApiService.loadModels();
-      
-      // Artificial delay for UI effect
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      if (videoRef.current) {
-        const descriptor = await FaceApiService.getFaceDescriptor(videoRef.current);
-        
-        if (!descriptor) {
-          alert("No face detected. Please try again.");
-          setScanStep('idle');
-          setIsScanning(false);
-          return;
-        }
-
-        // Fetch all patients for matching
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${API_URL}/api/patient`);
-        const patients = await response.json();
-
-        const match = FaceApiService.findBestMatch(descriptor, patients);
-
-        if (match) {
-          setResult(match);
-          setScanStep('matched');
-        } else {
-          alert("No matching patient found in the database.");
-          setScanStep('idle');
-        }
-      }
-    } catch (error) {
-      console.error("Scan Error:", error);
-      alert("Biometric scanning failed.");
-=======
       const html5QrCode = new Html5Qrcode("qr-reader");
       qrScannerRef.current = html5QrCode;
       
@@ -293,10 +239,7 @@ const DoctorScan = () => {
     } catch (err) {
       console.error("QR Error:", err);
       setIsScanning(false);
->>>>>>> e733d0c (AI chatbot , QR scanner added)
       setScanStep('idle');
-    } finally {
-      setIsScanning(false);
     }
   };
 
@@ -388,19 +331,6 @@ const DoctorScan = () => {
             </div>
           </div>
 
-<<<<<<< HEAD
-          <div className="relative aspect-video glass rounded-[3rem] border-white/5 overflow-hidden shadow-2xl flex items-center justify-center bg-white/[0.02]">
-             {/* Live Camera Feed */}
-             <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
-                <video 
-                  ref={videoRef}
-                  autoPlay 
-                  playsInline 
-                  className="w-full h-full object-cover grayscale opacity-40 scale-x-[-1]"
-                />
-             </div>
-=======
           <div className="flex justify-center mb-8">
             <div className="bg-white/5 p-1 rounded-2xl border border-white/10 flex">
               <button 
@@ -451,7 +381,6 @@ const DoctorScan = () => {
                 <div id="qr-reader" className="w-full h-full grayscale opacity-50"></div>
               )}
             </div>
->>>>>>> e733d0c (AI chatbot , QR scanner added)
 
             <AnimatePresence mode="wait">
               {scanStep === 'idle' && (

@@ -4,11 +4,8 @@ import { User, Droplets, AlertCircle, Phone, Stethoscope, Camera, CheckCircle2, 
 import { QRCodeCanvas } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 import { FaceApiService } from '../services/faceApiService';
-<<<<<<< HEAD
-=======
 import { supabase } from '../lib/supabase';
 import { auth } from '../lib/firebase';
->>>>>>> e733d0c (AI chatbot , QR scanner added)
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { useMedicalIdentity } from '../contexts/MedicalIdentityContext';
@@ -24,22 +21,7 @@ const Register = () => {
   useEffect(() => {
     startCamera();
     FaceApiService.loadModels();
-<<<<<<< HEAD
-  }, []);
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.error("Error accessing webcam:", err);
-    }
-  };
-=======
     
-    // Supabase Connection Test
     const testConnection = async () => {
       console.log("🔍 [Supabase] Testing connection...");
       try {
@@ -47,7 +29,7 @@ const Register = () => {
         if (error) {
           console.error("❌ [Supabase] Connection test failed:", error.message);
         } else {
-          console.log("✅ [Supabase] Connection successful. Bucket 'images' is reachable. Found files:", data.length);
+          console.log("✅ [Supabase] Connection successful. Found files:", data.length);
         }
       } catch (err) {
         console.error("💥 [Supabase] Connection test exception:", err);
@@ -55,7 +37,6 @@ const Register = () => {
     };
     testConnection();
 
-    // Cleanup: Stop camera stream when component unmounts
     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -73,90 +54,63 @@ const Register = () => {
     setCameraError(null);
 
     try {
-      // Stop any existing stream before starting a new one
       if (videoRef.current && videoRef.current.srcObject) {
         const oldStream = videoRef.current.srcObject as MediaStream;
-        oldStream.getTracks().forEach(track => {
-          track.stop();
-          track.enabled = false;
-        });
+        oldStream.getTracks().forEach(track => { track.stop(); track.enabled = false; });
         videoRef.current.srcObject = null;
       }
 
       console.log(`🎥 [Camera] Initializing (Attempt ${retryCount + 1})...`);
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: "user"
-        } 
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" } 
       });
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Wait for video to actually start playing
         await new Promise((resolve) => {
           if (!videoRef.current) return resolve(null);
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play();
-            resolve(null);
-          };
+          videoRef.current.onloadedmetadata = () => { videoRef.current?.play(); resolve(null); };
         });
       }
     } catch (err: any) {
       console.error("❌ [Camera] Access failed:", err);
       isStartingRef.current = false;
-      
       if (err.name === 'AbortError' && retryCount < 2) {
         console.warn(`⚠️ [Camera] Timeout. Retrying in 2s...`);
         setTimeout(() => startCamera(retryCount + 1), 2000);
       } else {
-        const msg = err.name === 'AbortError' 
+        setCameraError(err.name === 'AbortError' 
           ? "Camera timeout. Please close other apps using the camera and refresh." 
-          : "Camera access denied. Please check your browser permissions.";
-        setCameraError(msg);
+          : "Camera access denied. Please check your browser permissions.");
       }
       return;
     }
     isStartingRef.current = false;
   };
+
   const captureFrame = (): Promise<File | null> => {
     return new Promise((resolve) => {
       if (!videoRef.current) return resolve(null);
-      
       const canvas = document.createElement('canvas');
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
       const ctx = canvas.getContext('2d');
       if (!ctx) return resolve(null);
-
-      // Draw the current video frame to the canvas
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      
-      // Convert to blob then to file
       canvas.toBlob((blob) => {
         if (!blob) return resolve(null);
         const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
-        console.log("📸 [Frontend] Captured frame from video stream:", file.name);
+        console.log("📸 [Frontend] Captured frame:", file.name);
         resolve(file);
       }, 'image/jpeg', 0.95);
     });
   };
 
->>>>>>> e733d0c (AI chatbot , QR scanner added)
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    bloodGroup: '',
-    allergies: '',
-    chronicConditions: '',
-    medications: '',
-    pastSurgeries: '',
-    recentIssues: '',
-    emergencyContact: '',
-    age: '',
-    gender: '',
-    doctorHospital: '',
+    name: '', bloodGroup: '', allergies: '', chronicConditions: '',
+    medications: '', pastSurgeries: '', recentIssues: '',
+    emergencyContact: '', age: '', gender: '', doctorHospital: '',
   });
 
   const [file, setFile] = useState<File | null>(null);
@@ -168,11 +122,8 @@ const Register = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
-<<<<<<< HEAD
-=======
   const [registeredId, setRegisteredId] = useState<string | null>(null);
-  const [matchedPatient, setMatchedPatient] = useState<any | null>(null); // Primarily used in Scan, but declared here as requested
->>>>>>> e733d0c (AI chatbot , QR scanner added)
+  const [matchedPatient, setMatchedPatient] = useState<any | null>(null);
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const genders = ['Male', 'Female', 'Non-binary', 'Other', 'Prefer not to say'];
@@ -180,13 +131,9 @@ const Register = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-<<<<<<< HEAD
-=======
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -196,7 +143,6 @@ const Register = () => {
     }
   };
 
->>>>>>> e733d0c (AI chatbot , QR scanner added)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -206,70 +152,10 @@ const Register = () => {
     if (!formData.emergencyContact) newErrors.emergencyContact = "Emergency contact is required";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      const firstError = Object.values(newErrors)[0];
-      alert(`Validation Error: ${firstError}`);
+      alert(`Validation Error: ${Object.values(newErrors)[0]}`);
       return;
     }
 
-<<<<<<< HEAD
-    console.log("Validation passed. Starting face capture...");
-
-    setIsCapturing(true);
-    // 1. Capture Face Descriptor (Biometric Enrollment)
-    let faceDescriptor = null;
-    try {
-      if (videoRef.current) {
-        await FaceApiService.loadModels();
-        faceDescriptor = await FaceApiService.getFaceDescriptor(videoRef.current);
-        if (!faceDescriptor) {
-          alert("Face capture failed. Please make sure your face is clearly visible and within the frame.");
-          setIsCapturing(false);
-          return;
-        }
-        console.log("Face Descriptor captured successfully");
-      } else {
-        alert("Camera feed not ready. Please refresh and try again.");
-        setIsCapturing(false);
-        return;
-      }
-    } catch (err) {
-      console.error("Face capture error:", err);
-      alert("AI models failed to initialize. Please try again.");
-      setIsCapturing(false);
-      return;
-    }
-
-    setIsCapturing(false);
-    setIsReady(true);
-    
-    // 2. Prepare for Backend (JSON)
-    const payload = {
-      ...formData,
-      faceDescriptor, // Include the 128-dimensional array
-      createdAt: new Date().toISOString()
-    };
-
-    // API Call to Backend
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    fetch(`${API_URL}/api/patient/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-    .then(response => response.json())
-    .then(result => {
-      if (result.success) {
-        console.log("Registration Successful:", result);
-        // Update local context for immediate demo feedback
-        registerIdentity({
-          ...formData,
-          id: result.patientId, // Use ID from server
-          image: faceImagePreview,
-          reports: reportPreviews.map(r => ({ name: r.name, type: r.type, content: '' }))
-        });
-=======
     let finalFile = file;
     if (!finalFile) {
       console.log("📸 [Supabase] No manual image. Capturing from webcam...");
@@ -281,9 +167,7 @@ const Register = () => {
       try {
         console.log("🧬 [Register] Loading face-api models...");
         await FaceApiService.loadModels();
->>>>>>> e733d0c (AI chatbot , QR scanner added)
         
-        // Load image for face-api
         const img = new Image();
         img.src = URL.createObjectURL(finalFile);
         await new Promise(resolve => img.onload = resolve);
@@ -299,11 +183,10 @@ const Register = () => {
 
         console.log("🧬 [Register] Descriptor success:", descriptor.length, "points");
 
-        // 1. Upload to Supabase Storage
         const fileName = `${Date.now()}-${finalFile.name || 'webcam.jpg'}`;
         console.log("📤 [Supabase] Uploading image:", fileName);
         
-        let finalImageUrl = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200&h=200&fit=crop"; // fallback
+        let finalImageUrl = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200&h=200&fit=crop";
         
         try {
           const { data: uploadData, error: uploadError } = await supabase.storage
@@ -311,11 +194,9 @@ const Register = () => {
             .upload(fileName, finalFile);
 
           if (uploadError) {
-             console.warn("⚠️ [Supabase] Upload failed, proceeding without image URL:", uploadError.message);
+             console.warn("⚠️ [Supabase] Upload failed:", uploadError.message);
           } else {
-            const { data: { publicUrl } } = supabase.storage
-              .from('images')
-              .getPublicUrl(fileName);
+            const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
             finalImageUrl = publicUrl;
             console.log("✅ [Supabase] Image URL:", publicUrl);
           }
@@ -323,9 +204,6 @@ const Register = () => {
            console.warn("⚠️ [Supabase] Upload exception:", err);
         }
 
-        console.log("✅ [Finalizing] Image URL:", finalImageUrl);
-
-        // 2. Save to Backend
         const patientData = {
           ...formData,
           faceImageUrl: finalImageUrl,
@@ -344,22 +222,18 @@ const Register = () => {
         if (result.success) {
           console.log("✅ [Register] Success! ID:", result.patientId);
           
-          // Link patientId to the current user's profile in Firestore
           const user = auth.currentUser;
           if (user) {
             try {
               const { db } = await import('../lib/firebase');
               const { doc, setDoc } = await import('firebase/firestore');
-              // Use setDoc with merge: true to create the document if it doesn't exist
               await setDoc(doc(db, "users", user.uid), {
                 patientId: result.patientId,
                 updatedAt: new Date().toISOString()
               }, { merge: true });
               console.log("🔗 [Register] Linked patientId to user profile");
             } catch (fsErr: any) {
-              console.error("⚠️ [Register] Firestore Link failed (likely permissions):", fsErr.message);
-              // We don't want to fail the whole registration just because the profile link failed
-              // The patient is already saved in the main 'patients' collection
+              console.error("⚠️ [Register] Firestore Link failed:", fsErr.message);
             }
           }
 
@@ -424,7 +298,6 @@ const Register = () => {
             </div>
             <h2 className="text-3xl font-bold mb-4">Medical Identity Created</h2>
             
-            {/* QR Code Section */}
             <div className="mb-8 p-6 bg-white rounded-3xl inline-block shadow-[0_0_50px_rgba(34,197,94,0.3)]">
               {(() => {
                 const qrUrl = `${window.location.origin}/emergency/${registeredId}`;
@@ -575,37 +448,12 @@ const Register = () => {
               </div>
             </div>
 
-<<<<<<< HEAD
-            {/* Biometric Enrollment Section */}
-=======
             {/* SECTION 5: BIOMETRICS */}
->>>>>>> e733d0c (AI chatbot , QR scanner added)
             <div className="glass p-8 rounded-[2.5rem] border-white/5 bg-red-600/[0.01]">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-500">5. Biometric Identity Enrollment</h3>
               </div>
-<<<<<<< HEAD
-              
-              <div className="flex flex-col items-center">
-                <div className="relative w-48 h-48 rounded-full glass border-2 border-red-500/20 overflow-hidden mb-6 group">
-                  <video 
-                    ref={videoRef}
-                    autoPlay 
-                    playsInline 
-                    className="w-full h-full object-cover grayscale opacity-60 scale-x-[-1]"
-                  />
-                  <div className="absolute inset-0 border-[6px] border-black/20 rounded-full" />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <Camera className="w-8 h-8 text-white/10 group-hover:text-red-500/20 transition-colors" />
-                  </div>
-                </div>
-                
-                <div className="text-center space-y-2">
-                  <p className="text-xs font-bold text-white/60">Position your face within the circle</p>
-                  <p className="text-[10px] text-white/20 uppercase tracking-widest max-w-[300px] leading-relaxed mx-auto">
-                    Our AI will capture your biometric facial markers to secure your medical identity. No photos are stored; only an encrypted 128-point descriptor.
-=======
               <div className="flex flex-col items-center">
                 <div className="relative w-48 h-48 rounded-full glass border-2 border-red-500/20 overflow-hidden mb-6 group">
                   {faceImagePreview ? (
@@ -648,7 +496,6 @@ const Register = () => {
                   <p className="text-xs font-bold text-white/60">Position your face within the circle</p>
                   <p className="text-[10px] text-white/20 uppercase tracking-widest max-w-[300px] leading-relaxed mx-auto">
                     AI will capture your biometric markers. No photos are stored; only an encrypted 128-point descriptor.
->>>>>>> e733d0c (AI chatbot , QR scanner added)
                   </p>
                 </div>
               </div>
@@ -656,22 +503,10 @@ const Register = () => {
 
             <Button 
               type="submit"
-<<<<<<< HEAD
-              disabled={isReady || isCapturing}
-              className={`w-full h-16 rounded-3xl font-bold text-lg shadow-[0_0_30px_rgba(220,38,38,0.3)] transition-all active:scale-[0.98] ${isReady ? 'bg-green-500 hover:bg-green-600' : 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:scale-[1.02]'}`}
-            >
-              {isCapturing ? (
-                <div className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Capturing Face Markers...
-                </div>
-              ) : isReady ? (
-=======
               disabled={isScanning}
               className={`w-full h-16 rounded-3xl font-bold text-lg shadow-[0_0_30px_rgba(220,38,38,0.3)] transition-all active:scale-[0.98] ${isScanning ? 'bg-red-900/50 cursor-not-allowed' : 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:scale-[1.02]'}`}
             >
               {isScanning ? (
->>>>>>> e733d0c (AI chatbot , QR scanner added)
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Securing Biometric Identity...
