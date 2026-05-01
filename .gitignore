@@ -4,5 +4,12 @@ backend/uploads/
 backend/data/patients.json
 dist/
 .DS_Store
-backend/*.json
-*.json
+
+# Firebase service account keys
+backend/*firebase-adminsdk*.json
+*firebase-adminsdk*.json
+*-firebase-*.json
+
+# Secrets
+*.pem
+*.key
