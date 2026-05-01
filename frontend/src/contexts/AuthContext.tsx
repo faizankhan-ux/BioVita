@@ -61,7 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      await firebaseSignOut();
+      const { signOut: fbSignOut } = await import("firebase/auth");
+      await fbSignOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);
     }

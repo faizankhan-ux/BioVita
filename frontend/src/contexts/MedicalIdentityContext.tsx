@@ -15,6 +15,7 @@ export interface MedicalIdentity {
   doctorHospital?: string;
   reports?: Array<{ name: string; type: string; content: string }>;
   image?: string; // Base64 or URL
+  faceImageUrl?: string; // Supabase storage URL for face image
   createdAt: string;
   vitals?: {
     heartRate: number;

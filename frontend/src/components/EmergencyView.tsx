@@ -29,7 +29,8 @@ export default function EmergencyView() {
     const fetchPatient = async () => {
       try {
         console.log(`🔍 [Emergency] Extracting ID from URL: ${id}`);
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const API_URL = import.meta.env.VITE_API_URL;
+        if (!API_URL) throw new Error("VITE_API_URL is not configured.");
         const response = await fetch(`${API_URL}/api/patient/${id}`);
         
         if (!response.ok) {

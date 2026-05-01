@@ -211,7 +211,8 @@ const Register = () => {
           createdAt: new Date().toISOString()
         };
 
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const API_URL = import.meta.env.VITE_API_URL;
+        if (!API_URL) throw new Error("VITE_API_URL is not configured. Cannot register patient.");
         const response = await fetch(`${API_URL}/api/patient/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

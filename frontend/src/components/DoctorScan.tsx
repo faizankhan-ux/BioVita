@@ -137,7 +137,8 @@ const DoctorScan = () => {
 
         console.log("🧬 [Scanning] Captured Descriptor:", Array.from(descriptor).slice(0, 5));
 
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const API_URL = import.meta.env.VITE_API_URL;
+        if (!API_URL) throw new Error("VITE_API_URL is not configured.");
         const response = await fetch(`${API_URL}/api/patient/match`, {
           method: 'POST',
           headers: { 
@@ -217,7 +218,8 @@ const DoctorScan = () => {
 
           // Fetch specific patient by ID
           console.log(`🌐 [QR] Fetching patient profile for ID: ${patientId}`);
-          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+          const API_URL = import.meta.env.VITE_API_URL;
+          if (!API_URL) throw new Error("VITE_API_URL is not configured.");
           const response = await fetch(`${API_URL}/api/patient/${patientId}`);
           
           if (response.ok) {
@@ -269,7 +271,8 @@ const DoctorScan = () => {
       }
 
       console.log("🧬 [Manual Scan] Descriptor captured");
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const API_URL = import.meta.env.VITE_API_URL;
+      if (!API_URL) throw new Error("VITE_API_URL is not configured.");
       const response = await fetch(`${API_URL}/api/patient/match`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

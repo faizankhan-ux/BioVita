@@ -28,15 +28,23 @@ import {
   Timestamp
 } from "firebase/firestore";
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration — values MUST come from env vars
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyA1OB9Umxfrl3AKpiFoOagYx2Y6F0nPbS8",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "biovita2.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "biovita2",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "biovita2.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "181424595866",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:181424595866:web:eb08d9fcbdf7bf386b1023"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
+
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.error(
+    "❌ FATAL: Firebase config is incomplete.",
+    "\n  → In development: check frontend/.env",
+    "\n  → In production: set VITE_FIREBASE_* vars in Vercel Dashboard"
+  );
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

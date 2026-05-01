@@ -45,7 +45,8 @@ const Emergency = () => {
 
   const handleSos = async () => {
     setSosActive(true);
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const API_URL = import.meta.env.VITE_API_URL;
+    if (!API_URL) { console.error("VITE_API_URL missing"); return; }
     try {
       const response = await fetch(`${API_URL}/api/alert`, {
         method: 'POST',
@@ -89,7 +90,8 @@ const Emergency = () => {
 
         console.log("🧬 [Scanning] Captured Descriptor (first 5 values):", Array.from(descriptor).slice(0, 5));
 
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const API_URL = import.meta.env.VITE_API_URL;
+        if (!API_URL) throw new Error("VITE_API_URL is not configured.");
         const response = await fetch(`${API_URL}/api/patient/match`, {
           method: 'POST',
           headers: { 

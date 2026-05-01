@@ -57,7 +57,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { auth, db } from "../lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { recordService, HealthRecord } from "@/services/recordService";
-import { GoogleGenAI } from "@google/genai";
+import { startHealthChat } from "@/services/geminiService";
 import { TextRoll } from "@/components/ui/animated-menu";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { Logo } from "@/components/ui/Logo";
@@ -657,21 +657,19 @@ const AIAssistantView = () => {
     setIsTyping(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: text,
-        config: {
-          systemInstruction: "You are BioVita Assistant, a helpful medical intelligence. Provide clear, concise health advice based on user queries. Always remind users to consult a doctor for serious concerns."
-        }
-      });
+      const chat = startHealthChat(messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        content: m.content
+      })));
 
-      const aiResponse = response.text || "I'm sorry, I couldn't process that request.";
+      const result = await chat.sendMessage(text);
+      const response = await result.response;
+      const aiResponse = response.text() || "I'm sorry, I couldn't process that request.";
       console.log("AI Response:", aiResponse);
       setMessages(prev => [...prev, { role: 'assistant', content: aiResponse }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I'm having trouble connecting right now." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I'm having trouble connecting right now. Please check that VITE_GEMINI_API_KEY is set." }]);
     } finally {
       setIsTyping(false);
     }
