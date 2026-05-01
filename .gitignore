@@ -4,3 +4,5 @@ backend/uploads/
 backend/data/patients.json
 dist/
 .DS_Store
+backend/*.json
+*.json

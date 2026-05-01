@@ -22,12 +22,18 @@ export class FaceApiService {
     }
   }
 
+<<<<<<< HEAD
+  static async getFaceDescriptor(videoElement: HTMLVideoElement) {
+    const detection = await faceapi
+      .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions())
+=======
   static async getFaceDescriptor(inputElement: HTMLVideoElement | HTMLImageElement) {
     if (!this.modelsLoaded) {
       await this.loadModels();
     }
     const detection = await faceapi
       .detectSingleFace(inputElement, new faceapi.TinyFaceDetectorOptions())
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
       .withFaceLandmarks()
       .withFaceDescriptor();
 

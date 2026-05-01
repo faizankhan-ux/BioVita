@@ -53,6 +53,30 @@ router.get("/", async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
+// POST /api/patient/match
+router.post("/match", async (req, res) => {
+  try {
+    if (!db) throw new Error("Firebase not initialized");
+
+    const snapshot = await db.collection("patients")
+      .orderBy("createdAt", "desc")
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) {
+      return res.status(404).json({ matchFound: false, message: "No patients found" });
+    }
+
+    const patient = snapshot.docs[0].data();
+    res.json({ 
+      matchFound: true, 
+      patient: { ...patient, id: snapshot.docs[0].id } 
+    });
+  } catch (error) {
+    console.error("Matching Error:", error);
+    res.status(500).json({ success: false, message: "Failed to match patient" });
+=======
 // GET /api/patient/:id (Fetch specific patient by ID)
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
@@ -151,6 +175,7 @@ Please contact BioVita for details.`;
   } catch (error) {
     console.error("Matching Error:", error);
     res.status(500).json({ success: false, message: "Internal server error during matching" });
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
   }
 });
 

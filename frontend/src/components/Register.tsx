@@ -4,8 +4,11 @@ import { User, Droplets, AlertCircle, Phone, Stethoscope, Camera, CheckCircle2, 
 import { QRCodeCanvas } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 import { FaceApiService } from '../services/faceApiService';
+<<<<<<< HEAD
+=======
 import { supabase } from '../lib/supabase';
 import { auth } from '../lib/firebase';
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { useMedicalIdentity } from '../contexts/MedicalIdentityContext';
@@ -21,6 +24,20 @@ const Register = () => {
   useEffect(() => {
     startCamera();
     FaceApiService.loadModels();
+<<<<<<< HEAD
+  }, []);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Error accessing webcam:", err);
+    }
+  };
+=======
     
     // Supabase Connection Test
     const testConnection = async () => {
@@ -126,6 +143,7 @@ const Register = () => {
     });
   };
 
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -150,8 +168,11 @@ const Register = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+<<<<<<< HEAD
+=======
   const [registeredId, setRegisteredId] = useState<string | null>(null);
   const [matchedPatient, setMatchedPatient] = useState<any | null>(null); // Primarily used in Scan, but declared here as requested
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const genders = ['Male', 'Female', 'Non-binary', 'Other', 'Prefer not to say'];
@@ -164,6 +185,8 @@ const Register = () => {
     }
   };
 
+<<<<<<< HEAD
+=======
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -173,6 +196,7 @@ const Register = () => {
     }
   };
 
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -187,6 +211,65 @@ const Register = () => {
       return;
     }
 
+<<<<<<< HEAD
+    console.log("Validation passed. Starting face capture...");
+
+    setIsCapturing(true);
+    // 1. Capture Face Descriptor (Biometric Enrollment)
+    let faceDescriptor = null;
+    try {
+      if (videoRef.current) {
+        await FaceApiService.loadModels();
+        faceDescriptor = await FaceApiService.getFaceDescriptor(videoRef.current);
+        if (!faceDescriptor) {
+          alert("Face capture failed. Please make sure your face is clearly visible and within the frame.");
+          setIsCapturing(false);
+          return;
+        }
+        console.log("Face Descriptor captured successfully");
+      } else {
+        alert("Camera feed not ready. Please refresh and try again.");
+        setIsCapturing(false);
+        return;
+      }
+    } catch (err) {
+      console.error("Face capture error:", err);
+      alert("AI models failed to initialize. Please try again.");
+      setIsCapturing(false);
+      return;
+    }
+
+    setIsCapturing(false);
+    setIsReady(true);
+    
+    // 2. Prepare for Backend (JSON)
+    const payload = {
+      ...formData,
+      faceDescriptor, // Include the 128-dimensional array
+      createdAt: new Date().toISOString()
+    };
+
+    // API Call to Backend
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    fetch(`${API_URL}/api/patient/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        console.log("Registration Successful:", result);
+        // Update local context for immediate demo feedback
+        registerIdentity({
+          ...formData,
+          id: result.patientId, // Use ID from server
+          image: faceImagePreview,
+          reports: reportPreviews.map(r => ({ name: r.name, type: r.type, content: '' }))
+        });
+=======
     let finalFile = file;
     if (!finalFile) {
       console.log("📸 [Supabase] No manual image. Capturing from webcam...");
@@ -198,6 +281,7 @@ const Register = () => {
       try {
         console.log("🧬 [Register] Loading face-api models...");
         await FaceApiService.loadModels();
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
         
         // Load image for face-api
         const img = new Image();
@@ -491,12 +575,37 @@ const Register = () => {
               </div>
             </div>
 
+<<<<<<< HEAD
+            {/* Biometric Enrollment Section */}
+=======
             {/* SECTION 5: BIOMETRICS */}
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
             <div className="glass p-8 rounded-[2.5rem] border-white/5 bg-red-600/[0.01]">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-500">5. Biometric Identity Enrollment</h3>
               </div>
+<<<<<<< HEAD
+              
+              <div className="flex flex-col items-center">
+                <div className="relative w-48 h-48 rounded-full glass border-2 border-red-500/20 overflow-hidden mb-6 group">
+                  <video 
+                    ref={videoRef}
+                    autoPlay 
+                    playsInline 
+                    className="w-full h-full object-cover grayscale opacity-60 scale-x-[-1]"
+                  />
+                  <div className="absolute inset-0 border-[6px] border-black/20 rounded-full" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <Camera className="w-8 h-8 text-white/10 group-hover:text-red-500/20 transition-colors" />
+                  </div>
+                </div>
+                
+                <div className="text-center space-y-2">
+                  <p className="text-xs font-bold text-white/60">Position your face within the circle</p>
+                  <p className="text-[10px] text-white/20 uppercase tracking-widest max-w-[300px] leading-relaxed mx-auto">
+                    Our AI will capture your biometric facial markers to secure your medical identity. No photos are stored; only an encrypted 128-point descriptor.
+=======
               <div className="flex flex-col items-center">
                 <div className="relative w-48 h-48 rounded-full glass border-2 border-red-500/20 overflow-hidden mb-6 group">
                   {faceImagePreview ? (
@@ -539,6 +648,7 @@ const Register = () => {
                   <p className="text-xs font-bold text-white/60">Position your face within the circle</p>
                   <p className="text-[10px] text-white/20 uppercase tracking-widest max-w-[300px] leading-relaxed mx-auto">
                     AI will capture your biometric markers. No photos are stored; only an encrypted 128-point descriptor.
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
                   </p>
                 </div>
               </div>
@@ -546,10 +656,22 @@ const Register = () => {
 
             <Button 
               type="submit"
+<<<<<<< HEAD
+              disabled={isReady || isCapturing}
+              className={`w-full h-16 rounded-3xl font-bold text-lg shadow-[0_0_30px_rgba(220,38,38,0.3)] transition-all active:scale-[0.98] ${isReady ? 'bg-green-500 hover:bg-green-600' : 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:scale-[1.02]'}`}
+            >
+              {isCapturing ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Capturing Face Markers...
+                </div>
+              ) : isReady ? (
+=======
               disabled={isScanning}
               className={`w-full h-16 rounded-3xl font-bold text-lg shadow-[0_0_30px_rgba(220,38,38,0.3)] transition-all active:scale-[0.98] ${isScanning ? 'bg-red-900/50 cursor-not-allowed' : 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:scale-[1.02]'}`}
             >
               {isScanning ? (
+>>>>>>> e733d0c (AI chatbot , QR scanner added)
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Securing Biometric Identity...
